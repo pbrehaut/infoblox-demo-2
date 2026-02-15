@@ -287,7 +287,6 @@ class WorkflowRunner:
         )
         console.print()
         username = input("  Username: ")
-        # TODO: Switch back to getpass.getpass() for terminal use
         password = getpass("  Password: ")
         console.print()
 
