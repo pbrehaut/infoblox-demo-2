@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
+from getpass import getpass
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -33,8 +34,8 @@ INFOBLOX_HOST: str = "10.10.10.213"
 WAPI_VERSION: str = "v2.13.7"
 BASE_URL: str = f"https://{INFOBLOX_HOST}/wapi/{WAPI_VERSION}"
 
-CLIENT_CERT_FILE: Path = Path("client.cert.pem")
-CLIENT_KEY_FILE: Path = Path("client.key.pem")
+CLIENT_CERT_FILE: Path = Path(__file__).parent / "client.cert.pem"
+CLIENT_KEY_FILE: Path = Path(__file__).parent / "client.key.pem"
 
 DEMO_SNOW_REFERENCE: str = "SNOW-INC0012345"
 
@@ -287,7 +288,7 @@ class WorkflowRunner:
         console.print()
         username = input("  Username: ")
         # TODO: Switch back to getpass.getpass() for terminal use
-        password = input("  Password: ")
+        password = getpass("  Password: ")
         console.print()
 
         self.session.cert = None
