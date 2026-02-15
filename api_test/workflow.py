@@ -21,6 +21,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from getpass import getpass
 import requests
 from rich.console import Console
 from rich.layout import Layout
@@ -434,8 +435,7 @@ class WorkflowRunner:
         console.print("[bold yellow]  Certificate auth failed — falling back to basic auth[/bold yellow]")
         console.print()
         username = input("  Username: ")
-        # TODO: Switch back to getpass.getpass() for terminal use
-        password = input("  Password: ")
+        password = getpass("  Password: ")
         console.print()
 
         # Resume live display
