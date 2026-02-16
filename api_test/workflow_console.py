@@ -8,7 +8,7 @@ and response as separate panels connected by arrows.
 Steps:
     0. Authenticate (cert-first, basic auth fallback)
     1. Ensure ServiceNow_Reference EA exists
-    2. Retrieve IP subnets with Extensible Attributes
+    2. Retrieve target IP subnet with Extensible Attributes
     3. Get next available IP from a subnet
     4. Reserve the IP with a ServiceNow reference EA
 """
@@ -38,6 +38,7 @@ CLIENT_CERT_FILE: Path = Path(__file__).parent / "client.cert.pem"
 CLIENT_KEY_FILE: Path = Path(__file__).parent / "client.key.pem"
 
 DEMO_SNOW_REFERENCE: str = "SNOW-INC0012345"
+TARGET_NETWORK: str = "10.10.200.0/24"
 
 # =============================================================================
 # LOGGING (minimal — Rich handles the display)
@@ -360,16 +361,23 @@ class WorkflowRunner:
             return False
 
     def _step_get_subnets(self) -> Optional[List[Dict[str, Any]]]:
-        """Step 3: Retrieve IP subnets with Extensible Attributes.
+        """Step 3: Retrieve the target subnet with Extensible Attributes.
 
         Returns:
             List of network objects, or None on failure.
         """
-        step_name = "Get Subnets"
+        step_name = "Get Subnet"
 
         url = f"{BASE_URL}/network"
-        params = {"_return_fields+": "extattrs", "_return_as_object": 1}
-        display_url = f"{url}?_return_fields+=extattrs&_return_as_object=1"
+        params = {
+            "network": TARGET_NETWORK,
+            "_return_fields+": "extattrs",
+            "_return_as_object": 1,
+        }
+        display_url = (
+            f"{url}?network={TARGET_NETWORK}"
+            f"&_return_fields+=extattrs&_return_as_object=1"
+        )
         print_request_panel(step_name, "GET", display_url)
         print_prompt("Press Enter to send request...")
 
@@ -384,25 +392,24 @@ class WorkflowRunner:
         data = resp.json()
         networks = data.get("result", [])
 
-        # Build a summarised response for display
-        summary_list = []
-        for net in networks[:6]:
-            ea_names = list(net.get("extattrs", {}).keys()) or ["(none)"]
-            summary_list.append({
-                "network": net.get("network"),
-                "extattrs": ea_names,
-            })
+        if not networks:
+            print_response_panel(
+                step_name, resp.status_code, body=data,
+                error=f"Subnet {TARGET_NETWORK} not found",
+            )
+            return None
 
+        # Build a summarised response for display
+        net = networks[0]
+        ea_names = list(net.get("extattrs", {}).keys()) or ["(none)"]
         display_body: Dict[str, Any] = {
-            "count": len(networks),
-            "networks": summary_list,
+            "network": net.get("network"),
+            "extattrs": ea_names,
         }
-        if len(networks) > 6:
-            display_body["note"] = f"... and {len(networks) - 6} more"
 
         print_response_panel(
             step_name, resp.status_code, body=display_body,
-            summary=f"{len(networks)} subnets found",
+            summary=f"Subnet {TARGET_NETWORK} found",
         )
         return networks
 
@@ -466,8 +473,8 @@ class WorkflowRunner:
         url = f"{BASE_URL}/fixedaddress"
         body = {
             "ipv4addr": ip_address,
-            "mac": "00:00:00:00:00:00",
-            "match_client": "RESERVED",
+            "mac": "AA:BB:CC:00:00:01",
+            "match_client": "MAC_ADDRESS",
             "comment": f"Reserved by ServiceNow - {snow_ref}",
             "extattrs": {
                 "ServiceNow_Reference": {"value": snow_ref},
@@ -523,13 +530,13 @@ class WorkflowRunner:
             return
         print_prompt("Press Enter to continue...")
 
-        # Step 3: Get subnets
+        # Step 3: Get target subnet
         networks = self._step_get_subnets()
         if not networks:
             return
         print_prompt("Press Enter to continue...")
 
-        # Pick first subnet
+        # Use the target subnet
         first_network = networks[0]
         network_ref = first_network["_ref"]
         network_cidr = first_network.get("network", "unknown")
