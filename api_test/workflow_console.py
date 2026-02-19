@@ -15,6 +15,7 @@ Steps:
 
 import json
 import logging
+import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -22,6 +23,7 @@ import requests
 from getpass import getpass
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 from rich.text import Text
 
 requests.packages.urllib3.disable_warnings()
@@ -323,6 +325,77 @@ class WorkflowRunner:
             print_response_panel(step_name, 0, error=str(exc)[:200])
             return False
 
+    def _step_list_all_subnets(self) -> None:
+        """Step: Retrieve all subnets and display a summary table.
+
+        Fetches all networks with a broad set of return fields,
+        displays the raw response data, then prints a formatted
+        table showing network, location, and support group.
+        """
+        step_name = "List All Subnets"
+
+        url = f"{BASE_URL}/network"
+        params = {
+            "_return_fields+": (
+                "extattrs,comment,network_view,members,"
+                "options,zone_associations"
+            ),
+            "_return_as_object": 1,
+        }
+        display_url = (
+            f"{url}?_return_fields+=extattrs,comment,network_view,"
+            f"members,options,zone_associations&_return_as_object=1"
+        )
+        print_request_panel(step_name, "GET", display_url)
+        print_prompt("Press Enter to send request...")
+
+        resp = self.session.get(url, params=params, timeout=30)
+
+        if not resp.ok:
+            print_response_panel(
+                step_name, resp.status_code, error=resp.text[:200],
+            )
+            return
+
+        data = resp.json()
+        networks = data.get("result", [])
+
+        # Show full raw response in the panel
+        print_response_panel(
+            step_name, resp.status_code, body=networks,
+            summary=f"{len(networks)} subnets returned",
+        )
+
+        # Print a summary table of subnet data
+        if networks:
+            table = Table(
+                title="Subnet Summary",
+                border_style="blue",
+                width=PANEL_WIDTH,
+                show_lines=True,
+            )
+            table.add_column("Network", style="white", no_wrap=True)
+            table.add_column("Location", style="cyan")
+            table.add_column("Support Group", style="cyan")
+            table.add_column("_ref", style="dim", no_wrap=False)
+
+            for net in networks:
+                extattrs = net.get("extattrs", {})
+                location = extattrs.get("Location", {}).get("value", "—")
+                support_group = extattrs.get(
+                    "Support Group", {}
+                ).get("value", "—")
+                table.add_row(
+                    net.get("network", "unknown"),
+                    location,
+                    support_group,
+                    net.get("_ref", "—"),
+                )
+
+            print_arrow()
+            console.print()
+            console.print(table)
+
     def _step_ensure_ea(self) -> bool:
         """Step 2: Ensure ServiceNow_Reference EA exists.
 
@@ -470,10 +543,17 @@ class WorkflowRunner:
         """
         step_name = "Reserve IP"
 
+        # Generate a random locally-administered MAC address
+        random_mac: str = "02:00:00:{:02X}:{:02X}:{:02X}".format(
+            random.randint(0, 255),
+            random.randint(0, 255),
+            random.randint(0, 255),
+        )
+
         url = f"{BASE_URL}/fixedaddress"
         body = {
             "ipv4addr": ip_address,
-            "mac": "AA:BB:CC:00:00:01",
+            "mac": random_mac,
             "match_client": "MAC_ADDRESS",
             "comment": f"Reserved by ServiceNow - {snow_ref}",
             "extattrs": {
@@ -523,6 +603,10 @@ class WorkflowRunner:
             basic_ok = self._step_basic_auth()
             if not basic_ok:
                 return
+        print_prompt("Press Enter to continue...")
+
+        # List all subnets (field discovery)
+        self._step_list_all_subnets()
         print_prompt("Press Enter to continue...")
 
         # Step 2: Ensure EA
