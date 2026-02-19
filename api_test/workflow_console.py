@@ -385,11 +385,16 @@ class WorkflowRunner:
                 support_group = extattrs.get(
                     "Support Group", {}
                 ).get("value", "—")
+                ref_raw = net.get("_ref", "—")
+                if len(ref_raw) > 30:
+                    ref_display = ref_raw[:13] + "…" + ref_raw[-16:]
+                else:
+                    ref_display = ref_raw
                 table.add_row(
                     net.get("network", "unknown"),
                     location,
                     support_group,
-                    net.get("_ref", "—"),
+                    ref_display,
                 )
 
             print_arrow()
