@@ -29,8 +29,8 @@ INFOBLOX_HOST = "10.10.10.213"
 WAPI_VERSION = "v2.13.7"
 BASE_URL = f"https://{INFOBLOX_HOST}/wapi/{WAPI_VERSION}"
 
-CLIENT_EMAIL = "api-user.example.com"
-ADMIN_PASS = "infoblox"
+CLIENT_USER = "api-user"
+ADMIN_PASS = "changeme"
 
 CLIENT_CERT_FILE = Path("client.cert.pem")
 CLIENT_KEY_FILE = Path("client.key.pem")
@@ -73,10 +73,10 @@ logger.info("=== Test: client cert + basic auth ===")
 test_session = requests.Session()
 test_session.cert = (str(CLIENT_CERT_FILE.resolve()), str(CLIENT_KEY_FILE.resolve()))
 test_session.verify = False
-test_session.auth = (CLIENT_EMAIL, ADMIN_PASS)
+test_session.auth = (CLIENT_USER, ADMIN_PASS)
 
 logger.info("session.cert = %s", test_session.cert)
-logger.info("session.auth = (%s, ***)", CLIENT_EMAIL)
+logger.info("session.auth = (%s, ***)", CLIENT_USER)
 logger.info("GET %s/grid ...", BASE_URL)
 
 try:
@@ -137,10 +137,10 @@ logger.info("=== Test: basic auth only (no cert) — control ===")
 
 test_session_basic = requests.Session()
 test_session_basic.verify = False
-test_session_basic.auth = ("admin", "infoblox")
+test_session_basic.auth = (CLIENT_USER, ADMIN_PASS)
 
 logger.info("session.cert = None")
-logger.info("session.auth = (admin, ***)")
+logger.info("session.auth = (%s, ***)", CLIENT_USER)
 logger.info("GET %s/grid ...", BASE_URL)
 
 try:
