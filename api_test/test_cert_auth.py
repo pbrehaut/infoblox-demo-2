@@ -76,7 +76,7 @@ test_session.verify = False
 test_session.auth = (CLIENT_USER, ADMIN_PASS)
 
 logger.info("session.cert = %s", test_session.cert)
-logger.info("session.auth = (%s, ***)", CLIENT_USER)
+logger.info("session.auth = (%s, %s)", CLIENT_USER, ADMIN_PASS)
 logger.info("GET %s/grid ...", BASE_URL)
 
 try:
@@ -85,38 +85,6 @@ try:
     logger.info("Response headers: %s", dict(resp.headers))
     if resp.status_code == 200:
         logger.info("SUCCESS — certificate auth is working")
-        logger.info("Response body: %s", resp.text[:500])
-    else:
-        logger.warning("FAILED with status %d", resp.status_code)
-        logger.warning("Response body: %s", resp.text[:500])
-except requests.exceptions.Timeout:
-    logger.error("TIMEOUT — request took longer than 10 seconds")
-except requests.exceptions.SSLError as e:
-    logger.error("SSL ERROR: %s", e)
-except Exception as e:
-    logger.error("%s: %s", type(e).__name__, e)
-
-# =============================================================================
-# TEST: CERT ONLY (NO BASIC AUTH)
-# =============================================================================
-
-logger.info("")
-logger.info("=== Test: client cert only (no basic auth) ===")
-
-test_session_cert_only = requests.Session()
-test_session_cert_only.cert = (str(CLIENT_CERT_FILE.resolve()), str(CLIENT_KEY_FILE.resolve()))
-test_session_cert_only.verify = False
-
-logger.info("session.cert = %s", test_session_cert_only.cert)
-logger.info("session.auth = None")
-logger.info("GET %s/grid ...", BASE_URL)
-
-try:
-    resp = test_session_cert_only.get(f"{BASE_URL}/grid", timeout=10)
-    logger.info("Response status: %d", resp.status_code)
-    logger.info("Response headers: %s", dict(resp.headers))
-    if resp.status_code == 200:
-        logger.info("SUCCESS — certificate-only auth is working")
         logger.info("Response body: %s", resp.text[:500])
     else:
         logger.warning("FAILED with status %d", resp.status_code)
@@ -140,7 +108,7 @@ test_session_basic.verify = False
 test_session_basic.auth = (CLIENT_USER, ADMIN_PASS)
 
 logger.info("session.cert = None")
-logger.info("session.auth = (%s, ***)", CLIENT_USER)
+logger.info("session.auth = (%s, %s)", CLIENT_USER, ADMIN_PASS)
 logger.info("GET %s/grid ...", BASE_URL)
 
 try:
