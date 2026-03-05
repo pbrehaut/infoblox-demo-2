@@ -29,7 +29,7 @@ INFOBLOX_HOST = "10.10.10.213"
 WAPI_VERSION = "v2.13.7"
 BASE_URL = f"https://{INFOBLOX_HOST}/wapi/{WAPI_VERSION}"
 
-CLIENT_EMAIL = "api-user@example.com"
+CLIENT_EMAIL = "api-user.example.com"
 ADMIN_PASS = "infoblox"
 
 CLIENT_CERT_FILE = Path("client.cert.pem")

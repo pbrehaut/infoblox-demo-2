@@ -61,7 +61,8 @@ INFOBLOX_HOST = "10.10.10.213"
 MEMBER_HOSTNAME = "ibgd.azureonpremlab1.local"
 WAPI_VERSION = "v2.13.7"
 
-CLIENT_EMAIL = "api-user@example.com"  # Must match the admin user we create
+CLIENT_USERNAME = "api-user"
+CLIENT_EMAIL = "api-user@example.com"  # Used for SAN email and user email mapping
 CA_COMMON_NAME = "Infoblox CA"
 CLIENT_COMMON_NAME = "api-user@example.com"
 CERT_VALID_DAYS = 365
@@ -310,11 +311,11 @@ logger.info("       CA cert ref: %s", ca_cert_ref)
 # STEP 4: CREATE ADMIN USER
 # =============================================================================
 
-logger.info("[4/6] Creating admin user: %s...", CLIENT_EMAIL)
+logger.info("[4/6] Creating admin user: %s...", CLIENT_USERNAME)
 
 # Check if user exists
-logger.debug("       GET adminuser?name=%s ...", CLIENT_EMAIL)
-resp = session.get(f"{BASE_URL}/adminuser", params={"name": CLIENT_EMAIL}, timeout=10)
+logger.debug("       GET adminuser?name=%s ...", CLIENT_USERNAME)
+resp = session.get(f"{BASE_URL}/adminuser", params={"name": CLIENT_USERNAME}, timeout=10)
 logger.debug("       Response: %d", resp.status_code)
 existing = resp.json()
 if existing:
@@ -326,7 +327,8 @@ else:
         f"{BASE_URL}/adminuser",
         json={
             "admin_groups": ["admin-group"],
-            "name": CLIENT_EMAIL,
+            "name": CLIENT_USERNAME,
+            "email": CLIENT_EMAIL,
             "password": "changeme",
         },
         timeout=10,
@@ -404,12 +406,12 @@ logger.info("[6/6] Testing certificate authentication...")
 test_session = requests.Session()
 test_session.cert = (str(CLIENT_CERT_FILE), str(CLIENT_KEY_FILE))
 test_session.verify = False
-test_session.auth = (CLIENT_EMAIL, "changeme")
+test_session.auth = (CLIENT_USERNAME, "changeme")
 
 logger.info("       GET %s/grid (using client cert + basic auth) ...", BASE_URL)
 logger.debug("       Cert: %s", CLIENT_CERT_FILE)
 logger.debug("       Key:  %s", CLIENT_KEY_FILE)
-logger.debug("       Basic auth user: %s", CLIENT_EMAIL)
+logger.debug("       Basic auth user: %s", CLIENT_USERNAME)
 try:
     resp = test_session.get(f"{BASE_URL}/grid", timeout=10)
     logger.info("       Response: %d", resp.status_code)
