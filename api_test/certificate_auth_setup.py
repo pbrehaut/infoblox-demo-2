@@ -64,7 +64,7 @@ WAPI_VERSION = "v2.13.7"
 CLIENT_USERNAME = "api-user"
 CLIENT_EMAIL = "api-user@example.com"  # Used for SAN email and user email mapping
 CA_COMMON_NAME = "Infoblox CA"
-CLIENT_COMMON_NAME = "api-user@example.com"
+CLIENT_COMMON_NAME = "api-user"
 CERT_VALID_DAYS = 365
 
 # Output files

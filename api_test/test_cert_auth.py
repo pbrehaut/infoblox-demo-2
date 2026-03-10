@@ -34,9 +34,9 @@ BASE_URL = f"https://{INFOBLOX_HOST}/wapi/{WAPI_VERSION}"
 CLIENT_USER = "api-user"
 ADMIN_PASS = "changeme"
 
-CLIENT_CERT_FILE = Path("client.cert.pem")
-CLIENT_KEY_FILE = Path("client.key.pem")
-CA_CERT_FILE = Path("ca.cert.pem")
+CLIENT_CERT_FILE = Path("api-user.crt")
+CLIENT_KEY_FILE = Path("api-user.key")
+CA_CERT_FILE = Path("support-ca.crt")
 
 # =============================================================================
 # PRE-FLIGHT CHECKS
@@ -171,7 +171,7 @@ logger.info("session.auth = (%s, %s)", CLIENT_USER, ADMIN_PASS)
 logger.info("GET %s/grid ...", BASE_URL)
 
 try:
-    resp = test_session.get(f"{BASE_URL}/grid", timeout=10)
+    resp = test_session.get(f"{BASE_URL}/authpolicy?_return_fields=usage_type,auth_services", timeout=10)
     logger.info("Response status: %d", resp.status_code)
     logger.info("Response headers: %s", dict(resp.headers))
     if resp.status_code == 200:
@@ -203,7 +203,7 @@ logger.info("session.auth = (%s, %s)", CLIENT_USER, ADMIN_PASS)
 logger.info("GET %s/grid ...", BASE_URL)
 
 try:
-    resp = test_session_basic.get(f"{BASE_URL}/grid", timeout=10)
+    resp = test_session_basic.get(f"{BASE_URL}/authpolicy?_return_fields=usage_type,auth_services", timeout=10)
     logger.info("Response status: %d", resp.status_code)
     if resp.status_code == 200:
         logger.info("SUCCESS — basic auth control test passed")
